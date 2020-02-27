@@ -2,9 +2,12 @@ Sami: an API documentation generator
 ====================================
 
 **NOTE**:
-It's fork of the great solution with some improvements for internal use.
-Everyone is welcome to send any PR or create issues, i'll try to improve it.
-@mikkie.k
+
+> It's fork of the great solution with some improvements for internal use.
+> Everyone is welcome to send any PR or create issues, i'll try to improve it.
+> @mikkie.k
+
+![Image of "interface" template](https://image.prntscr.com/image/KjchYnJCSZWTGrP5ncWVLQ.png)
 
 ====================================
 
