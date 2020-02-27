@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sami utility.
  *
@@ -13,86 +15,75 @@ namespace Sami\Reflection;
 
 use Sami\Project;
 
-class PropertyReflection extends Reflection
-{
+class PropertyReflection extends Reflection {
     protected $class;
     protected $modifiers;
     protected $default;
-    protected $errors = array();
+    protected $errors = [];
 
-    public function __toString()
-    {
-        return $this->class.'::$'.$this->name;
+    public function __toString() {
+        return $this->class . '::$' . $this->name;
     }
 
-    public function setModifiers($modifiers)
-    {
+    public function setModifiers($modifiers) {
         // if no modifiers, property is public
-        if (0 === ($modifiers & self::VISIBILITY_MODIFER_MASK)) {
+        if (($modifiers & self::VISIBILITY_MODIFER_MASK) === 0) {
             $modifiers |= self::MODIFIER_PUBLIC;
         }
 
         $this->modifiers = $modifiers;
     }
 
-    public function isPublic()
-    {
-        return self::MODIFIER_PUBLIC === (self::MODIFIER_PUBLIC & $this->modifiers);
+    public function isPublic() {
+        return (self::MODIFIER_PUBLIC & $this->modifiers) === self::MODIFIER_PUBLIC;
     }
 
-    public function isProtected()
-    {
-        return self::MODIFIER_PROTECTED === (self::MODIFIER_PROTECTED & $this->modifiers);
+    public function isProtected() {
+        return (self::MODIFIER_PROTECTED & $this->modifiers) === self::MODIFIER_PROTECTED;
     }
 
-    public function isPrivate()
-    {
-        return self::MODIFIER_PRIVATE === (self::MODIFIER_PRIVATE & $this->modifiers);
+    public function isPrivate() {
+        return (self::MODIFIER_PRIVATE & $this->modifiers) === self::MODIFIER_PRIVATE;
     }
 
-    public function isStatic()
-    {
-        return self::MODIFIER_STATIC === (self::MODIFIER_STATIC & $this->modifiers);
+    public function isStatic() {
+        return (self::MODIFIER_STATIC & $this->modifiers) === self::MODIFIER_STATIC;
     }
 
-    public function isFinal()
-    {
-        return self::MODIFIER_FINAL === (self::MODIFIER_FINAL & $this->modifiers);
+    public function isAbstract() {
+        return false;
     }
 
-    public function setDefault($default)
-    {
+    public function isFinal() {
+        return (self::MODIFIER_FINAL & $this->modifiers) === self::MODIFIER_FINAL;
+    }
+
+    public function setDefault($default) {
         $this->default = $default;
     }
 
-    public function getDefault()
-    {
+    public function getDefault() {
         return $this->default;
     }
 
-    public function getClass()
-    {
+    public function getClass() {
         return $this->class;
     }
 
-    public function setClass(ClassReflection $class)
-    {
+    public function setClass(ClassReflection $class) {
         $this->class = $class;
     }
 
-    public function getErrors()
-    {
+    public function getErrors() {
         return $this->errors;
     }
 
-    public function setErrors($errors)
-    {
+    public function setErrors($errors) {
         $this->errors = $errors;
     }
 
-    public function toArray()
-    {
-        return array(
+    public function toArray() {
+        return [
             'name' => $this->name,
             'line' => $this->line,
             'short_desc' => $this->shortDesc,
@@ -103,11 +94,10 @@ class PropertyReflection extends Reflection
             'modifiers' => $this->modifiers,
             'default' => $this->default,
             'errors' => $this->errors,
-        );
+        ];
     }
 
-    public static function fromArray(Project $project, $array)
-    {
+    public static function fromArray(Project $project, $array) {
         $property = new self($array['name'], $array['line']);
         $property->shortDesc = $array['short_desc'];
         $property->longDesc = $array['long_desc'];

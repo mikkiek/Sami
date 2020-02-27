@@ -1,0 +1,171 @@
+{% macro namespace_link(namespace) -%}
+    <a href="{{ namespace_path(namespace) }}">{{ namespace|raw }}</a>
+{%- endmacro %}
+
+{% macro class_link(class, absolute) -%}
+    {%- if class.projectclass -%}
+        <a href="{{ class_path(class) }}">
+    {%- elseif class.phpclass -%}
+        <a target="_blank" href="http://php.net/{{ class|raw }}">
+    {%- endif %}
+    {{- abbr_class(class, absolute|default(false)) }}
+    {%- if class.projectclass or class.phpclass %}</a>{% endif %}
+{%- endmacro %}
+
+{% macro method_link(method, absolute, classonly) -%}
+    <a href="{{ method_path(method) }}">
+        {{- abbr_class(method.class) }}{% if not classonly|default(false) %}::{{ method.name|raw }}{% endif -%}
+    </a>
+{%- endmacro %}
+
+{% macro property_link(property, absolute, classonly) -%}
+    <a href="{{ property_path(property) }}">
+        {{- abbr_class(property.class) }}{% if not classonly|default(false) %}#{{ property.name|raw }}{% endif -%}
+    </a>
+{%- endmacro %}
+
+{% macro hint_link(hints) -%}
+    {%- from _self import class_link %}
+
+    {%- if hints %}
+        {%- for hint in hints %}
+            {%- if hint.class %}
+                {{- class_link(hint.name) }}
+            {%- elseif hint.name %}
+                {{- abbr_class(hint.name) }}
+            {%- endif %}
+            {%- if hint.array %}[]{% endif %}
+            {%- if not loop.last %}|{% endif %}
+        {%- endfor %}
+    {%- endif %}
+{%- endmacro %}
+
+{% macro source_link(project, class) -%}
+    {% if class.sourcepath %}
+        (<a href="{{ class.sourcepath }}">View source</a>)
+    {%- endif %}
+{%- endmacro %}
+
+{% macro method_source_link(method) -%}
+    {% if method.sourcepath %}
+        <a href="{{ method.sourcepath }}">line {{ method.line|raw }}</a>
+    {%- else %}
+        line {{ method.line|raw }}
+    {%- endif %}
+{%- endmacro %}
+
+{% macro abbr_class(class, absolute) -%}
+    <abbr title="{{ class }}">{{ absolute|default(false) ? class : class.shortname }}</abbr>
+{%- endmacro %}
+
+{% macro getVisibilityIcon(entity) -%}
+    {% if entity.protected %}
+        <i class="fas fa-shield-alt text-warning"></i>
+    {% elseif entity.private %}
+        <i class="fas fa-lock text-danger"></i>
+    {% else %}
+        <i class="fas fa-globe text-primary"></i>
+    {% endif %}
+{%- endmacro %}
+
+{% macro getVisibilityDescription(entity) -%}
+    {% if entity.final %}final{% endif %}
+    {% if entity.abstract %}abstract{% endif %}
+    {% if entity.protected %}
+        protected
+    {% elseif entity.private %}
+        private
+    {% else %}
+        public
+    {% endif %}
+    {% if entity.static %}static{% endif %}
+{%- endmacro %}
+
+{% macro method_parameters_signature(method) -%}
+    {%- from "macros.twig" import hint_link -%}
+    (
+        {%- for parameter in method.parameters %}
+            {%- if parameter.hashint %}{{ hint_link(parameter.hint) }} {% endif -%}
+            {%- if parameter.variadic %}...{% endif %}${{ parameter.name|raw }}
+            {%- if parameter.default is not null %} = {{ parameter.default }}{% endif %}
+            {%- if not loop.last %}, {% endif %}
+        {%- endfor -%}
+    )
+{%- endmacro %}
+
+{% macro render_classes(classes) -%}
+    {% from _self import class_link, deprecated %}
+
+    <div class="container-fluid underlined">
+        {% for class in classes %}
+            <div class="row">
+                <div class="col-md-4">
+                    {% if class.isInterface %}
+                        <em>{{ class_link(class, true) }}</em>
+                    {% else %}
+                        {{ class_link(class, true) }}
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {{ class.shortdesc|desc(class) }}
+                </div>
+                <div class="col-md-2">
+                    {{ deprecated(class) }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{%- endmacro %}
+
+{% macro breadcrumbs(namespace) %}
+    {% set current_ns = '' %}
+    {% for ns in namespace|split('\\') %}
+        {%- if current_ns -%}
+            {% set current_ns = current_ns ~ '\\' ~ ns %}
+        {%- else -%}
+            {% set current_ns = ns %}
+        {%- endif -%}
+        <li><a href="{{ namespace_path(current_ns) }}">{{ ns|raw }}</a></li><li class="backslash">\</li>
+    {%- endfor %}
+{% endmacro %}
+
+{% macro deprecated(reflection, sup = false) %}
+    {% if reflection.deprecated %}
+        {% if sup %}<sup>{% endif %}
+            <span class="label label-danger">Deprecated</span>
+        {% if sup %}</sup>{% endif %}
+    {% endif %}
+{% endmacro %}
+
+{% macro getDeprecatedReason(reflection) %}
+    {% if reflection.deprecated %}
+        {% for tag in reflection.deprecated %}
+            {% if tag|join|length > 0 %}
+                <div class="class-description bg-danger text-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ tag|join(' ')|raw }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endmacro %}
+
+{% macro todo(reflection) %}
+        {% if reflection.todo %}<small><sup><span class="label label-info">todo</span></sup></small>{% endif %}
+{% endmacro %}
+
+{% macro todos(reflection) %}
+        {% from _self import todo %}
+
+        {% if reflection.todo %}
+            <p>
+                {{ todo(reflection)}}
+                {% for tag in reflection.todo %}
+                    <div class="class-description bg-danger text-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ tag|join(' ')|raw }}
+                    </div>
+                {% endfor %}
+            </p>
+        {% endif %}
+{% endmacro %}

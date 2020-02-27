@@ -1,0 +1,354 @@
+{% extends "layout/layout.twig" %}
+{% from "macros.twig" import getDeprecatedReason, getVisibilityIcon, getVisibilityDescription, render_classes, breadcrumbs, class_link, property_link, method_link, hint_link, source_link, method_source_link, deprecated, todo, todos %}
+{% block title %}{{ class|raw }} | {{ parent() }}{% endblock %}
+{% block body_class 'class' %}
+{% block page_id 'class:' ~ (class.name|replace({'\\': '_'})) %}
+
+{% block below_menu %}
+    {% if class.namespace %}
+        <div class="namespace-breadcrumbs">
+            <ol class="breadcrumb">
+                <li><span class="label label-default">{{ class.categoryName|raw }}</span></li>
+                {{ breadcrumbs(class.namespace) -}}
+                <li>{{ class.shortname|raw }}</li>
+            </ol>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block page_content %}
+
+    <div class="page-header">
+        <h1>
+            {{ class.name|split('\\')|last|raw }}
+            {{ deprecated(class, true) }}
+        </h1>
+    </div>
+
+    {{ getDeprecatedReason(class) }}
+
+    <p>{{ block('class_signature') }}</p>
+
+    {% if class.shortdesc or class.longdesc %}
+        <div class="class-description bg-warning">
+            {% if class.shortdesc -%}
+                <p>{{ class.shortdesc|desc(class) }}</p>
+            {%- endif %}
+            {% if class.longdesc -%}
+                <p>{{ class.longdesc|desc(class) }}</p>
+            {%- endif %}
+            {% if project.config('insert_todos') == true %}
+                {{ todos(class) }}
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if traits %}
+        <h2 class="bg-info">Traits</h2>
+
+        {{ render_classes(traits) }}
+    {% endif %}
+
+    {% if constants %}
+        <h2 class="bg-info">Constants</h2>
+
+        {{ block('constants') }}
+    {% endif %}
+
+    {% if properties %}
+        <h2 class="bg-info">Properties</h2>
+
+        {{ block('properties') }}
+    {% endif %}
+
+    {% if methods %}
+        <h2 class="bg-info">Methods</h2>
+
+        {{ block('methods') }}
+
+        <h2 class="bg-info">Details</h2>
+
+        {{ block('methods_details') }}
+    {% endif %}
+
+{% endblock %}
+
+{% block class_signature -%}
+    {% if not class.interface and class.abstract %}abstract {% endif %}
+    {{ class.categoryName|raw }}
+    <strong>{{ class.shortname|raw }}</strong>
+    {%- if class.parent %}
+        extends {{ class_link(class.parent) }}
+    {%- endif %}
+    {%- if class.interfaces|length > 0 %}
+        implements
+        {% for interface in class.interfaces %}
+            {{- class_link(interface) }}
+            {%- if not loop.last %}, {% endif %}
+        {%- endfor %}
+    {%- endif %}
+    {{- source_link(project, class) }}
+{% endblock %}
+
+{% block method_signature -%}
+    {{ getVisibilityIcon(method) }}
+    {{ getVisibilityDescription(method) }}
+    <strong>{{ method.name|raw }}</strong>{{ block('method_parameters_signature') }}{% if method.hint %}: {{ hint_link(method.hint) }}{% endif %}
+{%- endblock %}
+
+{% block method_parameters_signature -%}
+    {%- from "macros.twig" import method_parameters_signature -%}
+    {{ method_parameters_signature(method) }}
+{%- endblock %}
+
+{% block parameters %}
+    <div class="container-fluid underlined">
+        {% for parameter in method.parameters %}
+            <div class="row">
+                <div class="col-md-2 type">
+                    {% if parameter.hint %}{{ hint_link(parameter.hint) }}{% endif %}
+                </div>
+                <div class="col-md-2 type">
+                    {%- if parameter.variadic %}...{% endif %}${{ parameter.name|raw }}
+                </div>
+                <div class="col-md-8">
+                    {{ parameter.shortdesc|desc(class) }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block return %}
+    <div class="container-fluid underlined">
+        <div class="row">
+            <div class="col-md-2 type">
+                {{ hint_link(method.hint) }}
+            </div>
+            <div class="col-md-2 type"></div>
+            <div class="col-md-8 type">
+                {{ method.hintDesc|desc(class) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block exceptions %}
+    <div class="container-fluid underlined">
+        {% for exception in method.exceptions %}
+            <div class="row">
+                <div class="col-md-2 type">
+                    {{ class_link(exception[0]) }}
+                </div>
+                <div class="col-md-2 type">
+                    {{ exception[1]|desc(class) }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block see %}
+    <div class="container-fluid underlined">
+        {% for see in method.see %}
+            <div class="row">
+                <div class="col-md-4 type">
+                    {% if see[4] %}
+                        <a href="{{see[4]}}">{{see[4]}}</a>
+                    {% elseif see[3] %}
+                        {{ method_link(see[3], false, false) }}
+                    {% elseif see[2] %}
+                        {{ class_link(see[2]) }}
+                    {% else %}
+                        {{ see[0]|raw }}
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    {{ see[1]|raw }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block properties %}
+    <div class="container-fluid underlined">
+        {% for property in properties %}
+            <div class="row">
+                <div class="col-md-2 type" id="property_{{ property.name|raw }}">
+                    {{ getVisibilityIcon(property) }}
+                    {{ getVisibilityDescription(property) }}
+                </div>
+                <div class="col-md-6 type">
+                    ${{ property.name|raw }}
+
+                    {% if not property.shortdesc %}
+                        <div class="no-description">No description</div>
+                    {% else %}
+                        <p>{{ property.shortdesc|desc(class) }}</p>
+                    {%- endif %}
+
+                    {% if property.longdesc %}
+                        <p>{{ property.longdesc|desc(class) }}</p>
+                    {%- endif -%}
+                </div>
+
+                <div class="col-md-2">
+                    {%- if property.class is not same as(class) -%}
+                        <small>from&nbsp;{{ property_link(property, false, true) }}</small>
+                    {%- endif -%}
+                </div>
+
+                <div class="col-md-2">
+                    {% if property.tags('since') %}
+                        <span class="label label-primary">{{ property.tags('since')|first|join }}</span>
+                    {%- endif -%}
+                    {{ deprecated(property) }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block constants %}
+    <div class="container-fluid underlined">
+        {% for constant in constants %}
+            <div class="row">
+                <div class="col-md-2 type">
+                    {{ getVisibilityIcon(constant) }}
+                    {{ getVisibilityDescription(constant) }}
+                </div>
+                <div class="col-md-6 type">
+                    {{ constant.name|raw }}
+
+                    {% if not constant.shortdesc %}
+                        <div class="no-description">No description</div>
+                    {% else %}
+                        <p>{{ constant.shortdesc|desc(class) }}</p>
+                    {%- endif %}
+
+                    {% if constant.longdesc %}
+                        <p>{{ constant.longdesc|desc(class) }}</p>
+                    {%- endif -%}
+                </div>
+
+                <div class="col-md-2"></div>
+
+                <div class="col-md-2">
+                    {% if constant.tags('since') %}
+                        <span class="label label-primary">{{ constant.tags('since')|first|join }}</span>
+                    {%- endif -%}
+                    {{ deprecated(constant) }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block methods %}
+    <div class="container-fluid underlined">
+        {% for method in methods %}
+            <div class="row">
+                <div class="col-md-2 type">
+                    {{ getVisibilityIcon(method) }}
+                    {{ getVisibilityDescription(method) }}
+                </div>
+                <div class="col-md-6 type">
+                    <a href="#method_{{ method.name|raw }}">{{ method.name|raw }}</a>{{ block('method_parameters_signature') }}{% if method.hint %}: {{ hint_link(method.hint) }}{% endif %}
+
+                    {% if not method.shortdesc %}
+                        <div class="no-description">No description</div>
+                    {% else %}
+                        <p>{{ method.shortdesc|desc(class) }}</p>
+                    {%- endif %}
+                </div>
+                <div class="col-md-2">
+                    {%- if method.class is not same as(class) -%}
+                        <small>from&nbsp;{{ method_link(method, false, true) }}</small>
+                    {%- endif -%}
+                </div>
+                <div class="col-md-2">
+                    {% if method.tags('since') %}
+                        <span class="label label-primary">{{ method.tags('since')|first|join }}</span>
+                    {%- endif -%}
+                    {{ deprecated(method) }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block methods_details %}
+    <div id="method-details">
+        {% for method in methods %}
+            <div class="method-item">
+                {{ block('method') }}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block method %}
+    <div class="bg-default">
+        <h3 id="method_{{ method.name|raw }}">
+            <div class="location">{% if method.class is not same as(class) %}in {{ method_link(method, false, true) }} {% endif %}at {{ method_source_link(method) }}</div>
+            {{ block('method_signature') }}
+            {{ deprecated(method, true) }}
+        </h3>
+    </div>
+
+    {{ getDeprecatedReason(method) }}
+
+    <div class="details">
+        {% if method.shortdesc or method.longdesc %}
+            <div class="method-description">
+                {% if not method.shortdesc and not method.longdesc %}
+                    <div class="no-description">No description</div>
+                {% else %}
+                    {% if method.shortdesc -%}
+                        <div class="short-description bg-warning">{{ method.shortdesc|desc(class) }}</div>
+                    {%- endif %}
+                    {% if method.longdesc -%}
+                        <div>{{ method.longdesc|desc(class) }}</div>
+                    {%- endif %}
+                {%- endif %}
+                {% if project.config('insert_todos') == true %}
+                    {{ todos(method) }}
+                {% endif %}
+            </div>
+        {% endif %}
+        <div class="tags">
+            {% if method.parameters %}
+                <h4>Parameters</h4>
+
+                {{ block('parameters') }}
+
+                <br />
+            {% endif %}
+
+            {% if method.hintDesc or method.hint %}
+                <h4>Return Value</h4>
+
+                {{ block('return') }}
+
+                <br />
+            {% endif %}
+
+            {% if method.exceptions %}
+                <h4>Exceptions</h4>
+
+                {{ block('exceptions') }}
+
+                <br />
+            {% endif %}
+
+            {% if method.tags('see') %}
+                <h4>See also</h4>
+
+                {{ block('see') }}
+
+                <br />
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sami utility.
  *
@@ -13,18 +15,18 @@ namespace Sami\Parser;
 
 use PhpParser\Node as AbstractNode;
 use PhpParser\Node\Name\FullyQualified;
-use PhpParser\NodeVisitorAbstract;
-use PhpParser\Node\Stmt\ClassConst as ClassConstNode;
-use PhpParser\Node\Stmt\ClassMethod as ClassMethodNode;
+use PhpParser\Node\NullableType;
 use PhpParser\Node\Stmt\Class_ as ClassNode;
+use PhpParser\Node\Stmt\ClassConst as ClassConstNode;
 use PhpParser\Node\Stmt\ClassLike as ClassLikeNode;
+use PhpParser\Node\Stmt\ClassMethod as ClassMethodNode;
 use PhpParser\Node\Stmt\Interface_ as InterfaceNode;
 use PhpParser\Node\Stmt\Namespace_ as NamespaceNode;
 use PhpParser\Node\Stmt\Property as PropertyNode;
-use PhpParser\Node\Stmt\TraitUse as TraitUseNode;
 use PhpParser\Node\Stmt\Trait_ as TraitNode;
+use PhpParser\Node\Stmt\TraitUse as TraitUseNode;
 use PhpParser\Node\Stmt\Use_ as UseNode;
-use PhpParser\Node\NullableType;
+use PhpParser\NodeVisitorAbstract;
 use Sami\Project;
 use Sami\Reflection\ClassReflection;
 use Sami\Reflection\ConstantReflection;
@@ -32,66 +34,68 @@ use Sami\Reflection\MethodReflection;
 use Sami\Reflection\ParameterReflection;
 use Sami\Reflection\PropertyReflection;
 
-class NodeVisitor extends NodeVisitorAbstract
-{
+class NodeVisitor extends NodeVisitorAbstract {
     protected $context;
 
-    public function __construct(ParserContext $context)
-    {
+    public function __construct(ParserContext $context) {
         $this->context = $context;
     }
 
-    public function enterNode(AbstractNode $node)
-    {
+    public function enterNode(AbstractNode $node) {
         if ($node instanceof NamespaceNode) {
-            $this->context->enterNamespace((string) $node->name);
-        } elseif ($node instanceof UseNode) {
+            $this->context->enterNamespace((string)$node->name);
+        }
+        elseif ($node instanceof UseNode) {
             $this->addAliases($node);
-        } elseif ($node instanceof InterfaceNode) {
+        }
+        elseif ($node instanceof InterfaceNode) {
             $this->addInterface($node);
-        } elseif ($node instanceof ClassNode) {
+        }
+        elseif ($node instanceof ClassNode) {
             $this->addClass($node);
-        } elseif ($node instanceof TraitNode) {
+        }
+        elseif ($node instanceof TraitNode) {
             $this->addTrait($node);
-        } elseif ($this->context->getClass() && $node instanceof TraitUseNode) {
+        }
+        elseif ($this->context->getClass() && $node instanceof TraitUseNode) {
             $this->addTraitUse($node);
-        } elseif ($this->context->getClass() && $node instanceof PropertyNode) {
+        }
+        elseif ($this->context->getClass() && $node instanceof PropertyNode) {
             $this->addProperty($node);
-        } elseif ($this->context->getClass() && $node instanceof ClassMethodNode) {
+        }
+        elseif ($this->context->getClass() && $node instanceof ClassMethodNode) {
             $this->addMethod($node);
-        } elseif ($this->context->getClass() && $node instanceof ClassConstNode) {
+        }
+        elseif ($this->context->getClass() && $node instanceof ClassConstNode) {
             $this->addConstant($node);
         }
     }
 
-    public function leaveNode(AbstractNode $node)
-    {
+    public function leaveNode(AbstractNode $node) {
         if ($node instanceof NamespaceNode) {
             $this->context->leaveNamespace();
-        } elseif ($node instanceof ClassNode || $node instanceof InterfaceNode || $node instanceof TraitNode) {
+        }
+        elseif ($node instanceof ClassNode || $node instanceof InterfaceNode || $node instanceof TraitNode) {
             $this->context->leaveClass();
         }
     }
 
-    protected function addAliases(UseNode $node)
-    {
+    protected function addAliases(UseNode $node) {
         foreach ($node->uses as $use) {
-            $this->context->addAlias($use->alias, (string) $use->name);
+            $this->context->addAlias($use->alias, (string)$use->name);
         }
     }
 
-    protected function addInterface(InterfaceNode $node)
-    {
+    protected function addInterface(InterfaceNode $node) {
         $class = $this->addClassOrInterface($node);
 
         $class->setInterface(true);
         foreach ($node->extends as $interface) {
-            $class->addInterface((string) $interface);
+            $class->addInterface((string)$interface);
         }
     }
 
-    protected function addClass(ClassNode $node)
-    {
+    protected function addClass(ClassNode $node) {
         // Skip anonymous classes
         if ($node->isAnonymous()) {
             return;
@@ -100,24 +104,22 @@ class NodeVisitor extends NodeVisitorAbstract
         $class = $this->addClassOrInterface($node);
 
         foreach ($node->implements as $interface) {
-            $class->addInterface((string) $interface);
+            $class->addInterface((string)$interface);
         }
 
         if ($node->extends) {
-            $class->setParent((string) $node->extends);
+            $class->setParent((string)$node->extends);
         }
     }
 
-    protected function addTrait(TraitNode $node)
-    {
+    protected function addTrait(TraitNode $node) {
         $class = $this->addClassOrInterface($node);
 
         $class->setTrait(true);
     }
 
-    protected function addClassOrInterface(ClassLikeNode $node)
-    {
-        $class = new ClassReflection((string) $node->namespacedName, $node->getLine());
+    protected function addClassOrInterface(ClassLikeNode $node) {
+        $class = new ClassReflection((string)$node->namespacedName, $node->getLine());
         if ($node instanceof ClassNode) {
             $class->setModifiers($node->flags);
         }
@@ -133,13 +135,14 @@ class NodeVisitor extends NodeVisitorAbstract
         $class->setSee($this->resolveSee($comment->getTag('see')));
         if ($errors = $comment->getErrors()) {
             $class->setErrors($errors);
-        } else {
+        }
+        else {
             $class->setTags($comment->getOtherTags());
         }
 
         if ($this->context->getFilter()->acceptClass($class)) {
             if ($errors) {
-                $this->context->addErrors((string) $class, $node->getLine(), $errors);
+                $this->context->addErrors((string)$class, $node->getLine(), $errors);
             }
             $this->context->enterClass($class);
         }
@@ -147,11 +150,10 @@ class NodeVisitor extends NodeVisitorAbstract
         return $class;
     }
 
-    protected function addMethod(ClassMethodNode $node)
-    {
+    protected function addMethod(ClassMethodNode $node) {
         $method = new MethodReflection($node->name, $node->getLine());
         $method->setModifiers($node->flags);
-        $method->setByRef((string) $node->byRef);
+        $method->setByRef((string)$node->byRef);
 
         foreach ($node->params as $param) {
             $parameter = new ParameterReflection($param->name, $param->getLine());
@@ -166,25 +168,27 @@ class NodeVisitor extends NodeVisitorAbstract
             $type = $param->type;
             $typeStr = null;
 
-            if (is_string($param->type)) {
+            if (\is_string($param->type)) {
                 $type = $param->type;
-                $typeStr = (string) $param->type;
-            } elseif ($param->type instanceof NullableType) {
+                $typeStr = (string)$param->type;
+            }
+            elseif ($param->type instanceof NullableType) {
                 $type = $param->type->type;
-                $typeStr = (string) $param->type->type;
-            } elseif (null !== $param->type) {
-                $typeStr = (string) $param->type;
+                $typeStr = (string)$param->type->type;
+            }
+            elseif ($param->type !== null) {
+                $typeStr = (string)$param->type;
             }
 
-            if ($type instanceof FullyQualified && 0 !== strpos($typeStr, '\\')) {
-                $typeStr = '\\'.$typeStr;
+            if ($type instanceof FullyQualified && \mb_strpos($typeStr, '\\') !== 0) {
+                $typeStr = '\\' . $typeStr;
             }
 
-            if (null !== $typeStr) {
-                $typeArr = array(array($typeStr, false));
+            if ($typeStr !== null) {
+                $typeArr = [[$typeStr, false]];
 
                 if ($param->type instanceof NullableType) {
-                    $typeArr[] = array('null', false);
+                    $typeArr[] = ['null', false];
                 }
 
                 $parameter->setHint($this->resolveHint($typeArr));
@@ -215,23 +219,25 @@ class NodeVisitor extends NodeVisitorAbstract
         $returnType = $node->getReturnType();
         $returnTypeStr = null;
 
-        if (is_string($returnType)) {
-            $returnTypeStr = (string) $returnType;
-        } elseif ($returnType instanceof NullableType) {
-            $returnTypeStr = (string) $returnType->type;
-        } elseif (null !== $returnType) {
-            $returnTypeStr = (string) $returnType;
+        if (\is_string($returnType)) {
+            $returnTypeStr = (string)$returnType;
+        }
+        elseif ($returnType instanceof NullableType) {
+            $returnTypeStr = (string)$returnType->type;
+        }
+        elseif ($returnType !== null) {
+            $returnTypeStr = (string)$returnType;
         }
 
-        if ($returnType instanceof FullyQualified && 0 !== strpos($returnTypeStr, '\\')) {
-            $returnTypeStr = '\\'.$returnTypeStr;
+        if ($returnType instanceof FullyQualified && \mb_strpos($returnTypeStr, '\\') !== 0) {
+            $returnTypeStr = '\\' . $returnTypeStr;
         }
 
-        if (null !== $returnTypeStr) {
-            $returnTypeArr = array(array($returnTypeStr, false));
+        if ($returnTypeStr !== null) {
+            $returnTypeArr = [[$returnTypeStr, false]];
 
             if ($returnType instanceof NullableType) {
-                $returnTypeArr[] = array('null', false);
+                $returnTypeArr[] = ['null', false];
             }
 
             $method->setHint($this->resolveHint($returnTypeArr));
@@ -241,13 +247,12 @@ class NodeVisitor extends NodeVisitorAbstract
             $this->context->getClass()->addMethod($method);
 
             if ($errors) {
-                $this->context->addErrors((string) $method, $node->getLine(), $errors);
+                $this->context->addErrors((string)$method, $node->getLine(), $errors);
             }
         }
     }
 
-    protected function addProperty(PropertyNode $node)
-    {
+    protected function addProperty(PropertyNode $node) {
         foreach ($node->props as $prop) {
             $property = new PropertyReflection($prop->name, $prop->getLine());
             $property->setModifiers($node->flags);
@@ -261,7 +266,8 @@ class NodeVisitor extends NodeVisitorAbstract
             $property->setSee($this->resolveSee($comment->getTag('see')));
             if ($errors = $comment->getErrors()) {
                 $property->setErrors($errors);
-            } else {
+            }
+            else {
                 if ($tag = $comment->getTag('var')) {
                     $property->setHint($this->resolveHint($tag[0][0]));
                     $property->setHintDesc($tag[0][1]);
@@ -274,47 +280,46 @@ class NodeVisitor extends NodeVisitorAbstract
                 $this->context->getClass()->addProperty($property);
 
                 if ($errors) {
-                    $this->context->addErrors((string) $property, $prop->getLine(), $errors);
+                    $this->context->addErrors((string)$property, $prop->getLine(), $errors);
                 }
             }
         }
     }
 
-    protected function addTraitUse(TraitUseNode $node)
-    {
+    protected function addTraitUse(TraitUseNode $node) {
         foreach ($node->traits as $trait) {
-            $this->context->getClass()->addTrait((string) $trait);
+            $this->context->getClass()->addTrait((string)$trait);
         }
     }
 
-    protected function addConstant(ClassConstNode $node)
-    {
+    protected function addConstant(ClassConstNode $node) {
         foreach ($node->consts as $const) {
             $constant = new ConstantReflection($const->name, $const->getLine());
+            $constant->setModifiers($node->flags);
             $comment = $this->context->getDocBlockParser()->parse($node->getDocComment(), $this->context, $constant);
             $constant->setDocComment($node->getDocComment());
             $constant->setShortDesc($comment->getShortDesc());
             $constant->setLongDesc($comment->getLongDesc());
+            $constant->setTags($comment->getOtherTags());
 
             $this->context->getClass()->addConstant($constant);
         }
     }
 
-    protected function updateMethodParametersFromTags(MethodReflection $method, array $tags)
-    {
+    protected function updateMethodParametersFromTags(MethodReflection $method, array $tags) {
         // bypass if there is no @param tags defined (@param tags are optional)
-        if (!count($tags)) {
-            return array();
+        if (!\count($tags)) {
+            return [];
         }
 
-        if (count($method->getParameters()) != count($tags)) {
-            return array(sprintf('"%d" @param tags are expected but only "%d" found', count($method->getParameters()), count($tags)));
+        if (\count($method->getParameters()) != \count($tags)) {
+            return [\sprintf('"%d" @param tags are expected but only "%d" found', \count($method->getParameters()), \count($tags))];
         }
 
-        $errors = array();
-        foreach (array_keys($method->getParameters()) as $i => $name) {
+        $errors = [];
+        foreach (\array_keys($method->getParameters()) as $i => $name) {
             if ($tags[$i][1] && $tags[$i][1] != $name) {
-                $errors[] = sprintf('The "%s" @param tag variable name is wrong (should be "%s")', $tags[$i][1], $name);
+                $errors[] = \sprintf('The "%s" @param tag variable name is wrong (should be "%s")', $tags[$i][1], $name);
             }
         }
 
@@ -330,27 +335,25 @@ class NodeVisitor extends NodeVisitorAbstract
             }
         }
 
-        return array();
+        return [];
     }
 
-    protected function resolveHint($hints)
-    {
+    protected function resolveHint($hints) {
         foreach ($hints as $i => $hint) {
-            $hints[$i] = array($this->resolveAlias($hint[0]), $hint[1]);
+            $hints[$i] = [$this->resolveAlias($hint[0]), $hint[1]];
         }
 
         return $hints;
     }
 
-    protected function resolveAlias($alias)
-    {
+    protected function resolveAlias($alias) {
         // not a class
         if (Project::isPhpTypeHint($alias)) {
             return $alias;
         }
 
         // FQCN
-        if ('\\' == substr($alias, 0, 1)) {
+        if (\mb_substr($alias, 0, 1) == '\\') {
             return $alias;
         }
 
@@ -361,7 +364,7 @@ class NodeVisitor extends NodeVisitorAbstract
         // We may want to run class related checks only, if class is actually present.
         if ($class) {
             // special aliases
-            if ('self' === $alias || 'static' === $alias || '\$this' === $alias) {
+            if ($alias === 'self' || $alias === 'static' || $alias === '\$this') {
                 return $class->getName();
             }
 
@@ -373,44 +376,45 @@ class NodeVisitor extends NodeVisitorAbstract
             }
 
             // a class in the current class namespace
-            return $class->getNamespace().'\\'.$alias;
+            return $class->getNamespace() . '\\' . $alias;
         }
 
         return $alias;
     }
 
-    protected function resolveSee(array $see)
-    {
-        $return = array();
-        $matches = array();
+    protected function resolveSee(array $see) {
+        $return = [];
+        $matches = [];
 
         foreach ($see as $seeEntry) {
             $reference = $seeEntry[1];
             $description = $seeEntry[2];
-            if ((bool) preg_match('/^[\w]+:\/\/.+$/', $reference)) { //URL
-                $return[] = array(
+            if ((bool)\preg_match('/^[\w]+:\/\/.+$/', $reference)) { //URL
+                $return[] = [
                     $reference,
                     $description,
                     false,
                     false,
                     $reference,
-                );
-            } elseif ((bool) preg_match('/(.+)\:\:(.+)\(.*\)/', $reference, $matches)) { //Method
-                $return[] = array(
+                ];
+            }
+            elseif ((bool)\preg_match('/(.+)\:\:(.+)\(.*\)/', $reference, $matches)) { //Method
+                $return[] = [
                     $reference,
                     $description,
                     $this->resolveAlias($matches[1]),
                     $matches[2],
                     false,
-                );
-            } else { // We assume, that this is a class reference.
-                $return[] = array(
+                ];
+            }
+            else { // We assume, that this is a class reference.
+                $return[] = [
                     $reference,
                     $description,
                     $this->resolveAlias($reference),
                     false,
                     false,
-                );
+                ];
             }
         }
 
