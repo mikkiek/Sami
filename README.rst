@@ -1,10 +1,12 @@
 Sami: an API documentation generator
 ====================================
 
-**Note**
+**NOTE**
 It's forked solutions with some improvements of internal use.
 Everyone is welcome to send any PR or create issues, i'll try to impove it.
 @mikkie
+
+====================================
 
 **WARNING**: Sami is not supported nor maintained anymore. Feel free to fork.
 
