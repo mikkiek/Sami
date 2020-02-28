@@ -3,12 +3,42 @@ Sami: an API documentation generator
 
 .. pull-quote::
 
-    **NOTE**:
-    It's fork of the great solution with some improvements for internal use.
-    Everyone is welcome to send any PR or create issues, i'll try to improve it.
+    **NOTE #1**:
+    It's a fork of the great solution with some improvements for internal use.
+    However, everyone is welcome to send any PR or create issues, i'll try to improve it.
     @mikkie.k
 
+    **NOTE #2**:
+    We'll use Sami in a bit unusual way, not as `phar` application. 
+
 .. image:: https://image.prntscr.com/image/Hv4kjj74S1uzqGA5ozocWw.png
+
+Installation
+------------
+
+Get Sami as a `git repository` :
+
+.. code-block:: bash
+
+    $ git clone https://github.com/mikkiek/Sami.git
+    
+Inside of repository install all composer dependencies:
+
+.. code-block:: bash
+
+    $ composer install
+    
+Check that everything worked as expected by executing the following command without any arguments:
+
+.. code-block:: bash
+
+    $ php sami.php
+    
+When we have a configuration file, you can generate the API documentation:
+
+.. code-block:: bash
+
+    $ php sami.php update /path/to/config.php
 
 ====================================
 
