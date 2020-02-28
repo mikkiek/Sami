@@ -150,22 +150,26 @@
     {% endif %}
 {% endmacro %}
 
-{% macro todo(reflection) %}
-        {% if reflection.todo %}<small><sup><span class="label label-info">todo</span></sup></small>{% endif %}
+{% macro todo(reflection, sup = false) %}
+    {% if reflection.todo %}
+        {% if sup %}<sup>{% endif %}
+            <span class="label label-info">Todo</span>
+        {% if sup %}</sup>{% endif %}
+    {% endif %}
 {% endmacro %}
 
 {% macro todos(reflection) %}
-        {% from _self import todo %}
+    {% from _self import todo %}
 
-        {% if reflection.todo %}
-            <p>
-                {{ todo(reflection)}}
-                {% for tag in reflection.todo %}
-                    <div class="class-description bg-danger text-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        {{ tag|join(' ')|raw }}
-                    </div>
-                {% endfor %}
-            </p>
-        {% endif %}
+    {% if reflection.todo %}
+        <div class="class-description bg-blank text-info">
+            {% for tag in reflection.todo %}
+                <div class="spacing-h-5">
+                    {{ todo(reflection)}}
+                    <i class="fab fa-accessible-icon text-info"></i>
+                    {{ tag|join(' ')|raw }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endmacro %}

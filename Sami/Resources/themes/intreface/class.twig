@@ -23,11 +23,15 @@
             {{ class.name|split('\\')|last|raw }}
             {{ deprecated(class, true) }}
         </h1>
+
+        {% if class.tags('package') %}
+            Package: <span class="label label-success">{{ class.tags('package')|first|join }}</span>
+        {% endif %}
     </div>
 
-    {{ getDeprecatedReason(class) }}
-
     <p>{{ block('class_signature') }}</p>
+
+    {{ getDeprecatedReason(class) }}
 
     {% if class.shortdesc or class.longdesc %}
         <div class="class-description bg-warning">
@@ -37,10 +41,11 @@
             {% if class.longdesc -%}
                 <p>{{ class.longdesc|desc(class) }}</p>
             {%- endif %}
-            {% if project.config('insert_todos') == true %}
-                {{ todos(class) }}
-            {% endif %}
         </div>
+
+        {% if project.config('insert_todos') == true %}
+            {{ todos(class) }}
+        {% endif %}
     {% endif %}
 
     {% if traits %}
@@ -204,6 +209,7 @@
                         <span class="label label-primary">{{ property.tags('since')|first|join }}</span>
                     {%- endif -%}
                     {{ deprecated(property) }}
+                    {{ todo(property) }}
                 </div>
             </div>
         {% endfor %}
@@ -239,6 +245,7 @@
                         <span class="label label-primary">{{ constant.tags('since')|first|join }}</span>
                     {%- endif -%}
                     {{ deprecated(constant) }}
+                    {{ todo(constant) }}
                 </div>
             </div>
         {% endfor %}
@@ -272,6 +279,7 @@
                         <span class="label label-primary">{{ method.tags('since')|first|join }}</span>
                     {%- endif -%}
                     {{ deprecated(method) }}
+                    {{ todo(method) }}
                 </div>
             </div>
         {% endfor %}
@@ -312,11 +320,9 @@
                         <div>{{ method.longdesc|desc(class) }}</div>
                     {%- endif %}
                 {%- endif %}
-                {% if project.config('insert_todos') == true %}
-                    {{ todos(method) }}
-                {% endif %}
             </div>
         {% endif %}
+
         <div class="tags">
             {% if method.parameters %}
                 <h4>Parameters</h4>
@@ -348,6 +354,10 @@
                 {{ block('see') }}
 
                 <br />
+            {% endif %}
+
+            {% if project.config('insert_todos') == true %}
+                {{ todos(method) }}
             {% endif %}
         </div>
     </div>
