@@ -24,13 +24,23 @@
             {{ deprecated(class, true) }}
         </h1>
 
-        {% if class.tags('package') %}
-            Package: <span class="label label-success">{{ class.tags('package')|first|join }}</span>
-        {% endif %}
-
-        {% if class.tags('author') %}
-            Author: <span class="label label-success">{{ class.tags('author')|first|join(', ')|preg_replace(' ?<.*>', '') }}</span>
-        {% endif %}
+        <div class="container-fluid row-no-gutters">
+            <div class="row">
+                <div class="col-md-6">
+                    {% if class.tags('package') %}
+                        Package: <span class="label label-success">{{ class.tags('package')|first|join }}</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 text-right">
+                    {% if class.tags('author') %}
+                        Author:
+                        {% for author in class.tags('author') %}
+                            <span class="label label-success">{{ author|join(' ')|preg_replace('~ ?<.*>~', '') }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 
     <p>{{ block('class_signature') }}</p>
