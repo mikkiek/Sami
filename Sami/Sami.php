@@ -158,7 +158,7 @@ class Sami extends Container {
             return new ThemeSet($templates);
         };
 
-        $this['twig'] = function () {
+        $this['twig'] = function(){
             $twig = new \Twig\Environment(new \Twig\Loader\FilesystemLoader(['/']), [
                 'strict_variables' => true,
                 'debug' => false,
@@ -166,6 +166,7 @@ class Sami extends Container {
                 'cache' => false,
             ]);
             $twig->addExtension(new TwigExtension());
+            $twig->addExtension(new \Jasny\Twig\PcreExtension());
 
             return $twig;
         };

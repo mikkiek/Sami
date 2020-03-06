@@ -27,6 +27,10 @@
         {% if class.tags('package') %}
             Package: <span class="label label-success">{{ class.tags('package')|first|join }}</span>
         {% endif %}
+
+        {% if class.tags('author') %}
+            Author: <span class="label label-success">{{ class.tags('author')|first|join(', ')|preg_replace(' ?<.*>', '') }}</span>
+        {% endif %}
     </div>
 
     <p>{{ block('class_signature') }}</p>
