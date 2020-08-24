@@ -78,6 +78,7 @@ class Sami extends Container {
                 'sort_class_constants' => $sc['sort_class_constants'],
                 'sort_class_traits' => $sc['sort_class_traits'],
                 'sort_class_interfaces' => $sc['sort_class_interfaces'],
+                'composer_package' => $sc['composer_package']
             ]);
             $project->setRenderer($sc['renderer']);
             $project->setParser($sc['parser']);
@@ -187,6 +188,7 @@ class Sami extends Container {
         $this['sort_class_constants'] = false;
         $this['sort_class_traits'] = false;
         $this['sort_class_interfaces'] = false;
+        $this['composer_package'] = '';
 
         // simulate namespaces for projects based on the PEAR naming conventions
         $this['simulate_namespaces'] = false;
